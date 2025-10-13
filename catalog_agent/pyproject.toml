@@ -1,0 +1,45 @@
+[project]
+name = "catalog-agent"
+version = "0.1.0"
+description = "CrewAI integration with MCP servers (DuckDB)"
+requires-python = ">=3.12,<=3.14"
+dependencies = [
+    "crewai",
+    "requests",
+    "python-dotenv",
+    "pydantic>=2.7",
+    "httpx>=0.27",
+    "tenacity>=8.2",
+    "langchain-ollama",
+    "pyyaml",
+    "crewai-tools[mcp]>=0.76.0",
+    "mcp-server-duckdb",
+    "duckdb>=1.4.0",
+    "pandas==2.3.3",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+]
+
+[project.scripts]
+run_crew = "catalog_agent.main:run"
+
+[tool.crewai]
+entry_point = "catalog_agent.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88

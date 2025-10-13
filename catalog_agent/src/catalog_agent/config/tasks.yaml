@@ -1,0 +1,55 @@
+# src/catalog_agent/config/tasks.yaml
+# Task configuration for CrewAI DuckDB Natural Language Integration
+# English comments: The first task must output ONLY columns and rows as JSON.
+# The second task must output ONLY a GitHub Markdown table (no analysis text).
+
+natural_language_query_task:
+  description: >
+    Du bist ein DuckDB-Experte mit dem MCP-Server "mcp-server-duckdb".
+    Dieser Server stellt ein einziges universelles Tool bereit: "query".
+    Führe eine Datenbankabfrage durch basierend auf der Benutzeranfrage in natürlicher Sprache {query}.
+
+    VERFÜGBARES TOOL (vom MCP-Server bereitgestellt):
+    - query: Beliebige SQL-Statements gegen DuckDB ausführen
+
+    SCHRITTE:
+    1. Analysiere die Benutzeranfrage: {query}
+    2. Erkenne die relevanten Datenbanken und Tabellen
+    3. Generiere eine passende SQL-Abfrage basierend auf {query} und den relevanten Datenbanken und Tabellen
+    4. Führe die SQL-Abfrage mit "query" aus
+    5. Wenn eine Abfrage 0 Zeilen liefert, prüfe mögliche Groß-/Kleinschreibung für den Spaltennamen UND den Datenwerten und führ sie erneut case-insensitiv aus.
+    6. Projiziere die Ergebnismenge auf alle Spalten
+    7. Speicher die Rohdaten AUSSCHLIESSLICH als JSON mit den Schlüsseln `columns` (string[]) und `rows` (Array von Objekten mit ausschließlich diesen Schlüsseln) in data/natural_language_query_task.json.
+       Keine weiteren Felder (kein count, keine query, keine Metadaten, keine Platzhalter).
+
+    WICHTIG:
+    - Erkenne die Spaltennamen der Tabelle um passende SQL-Abfragen zu generieren
+    - Generiere SQL-Abfragen basierend auf der natürlichen Sprache {query}
+    - Gib ausschließlich Werte aus tatsächlichen Tool-Ausgaben zurück.
+    - Wenn keine erfolgreiche Tool-Ausführung stattfand oder 0 Zeilen, liefere rows: [] und erfinde nichts.
+    - Führe mindestens eine erfolgreiche Tool-Abfrage aus, bevor du Ergebnisse lieferst.
+
+
+    Deine Aufgabe ist es, die richtigen Daten zu finden und zu sammeln. Die Präsentation erfolgt durch einen anderen Agenten.
+  expected_output: >
+    Ausschließlich ein JSON-Obejekt welches alle Spalten der Tabelle enthält.
+  agent: natural_language_query_agent
+  output_file: data/natural_language_query_task.json
+
+data_presentation_task:
+  description: >
+    Du bist ein Datenpräsentations-Experte für {query}. Nimm die Rohdaten der vorigen Task
+    (JSON mit allen Spalten der Tabelle) und erstelle folgende Ausgabe:
+    - count: Die Anzahl der Zeilen in der Tabelle.
+    - Erzeuge eine GitHub-Markdown-Tabelle mit den allen Spalten der Tabelle.
+    - Verwende die übergebenen `columns` (Reihenfolge strikt beibehalten) und `rows`.
+    - Bei Anfragen wie "Wie viele Anbieter" soll die Anzahl der Anbieter in der Tabelle ausgegeben werden.
+
+
+  expected_output: >
+    - count: Die Anzahl der Zeilen in der Tabelle.
+    - table_markdown: Eine GitHub-Markdown-Tabelle basierend auf `columns` und `rows` oder eine Ausgabe der Anzahl der Anbieter.
+      Die Datei data/data_presentation_task.md enthält ausschließlich diese Tabelle ohne zusätzlichen Text.
+  agent: data_presentation_agent
+  context: [natural_language_query_task]
+  output_file: data/data_presentation_task.md
