@@ -5,36 +5,46 @@
 
 natural_language_query_task:
   description: >
-    Du bist ein DuckDB-Experte mit dem MCP-Server "mcp-server-duckdb".
-    Dieser Server stellt ein einziges universelles Tool bereit: "query".
-    Führe eine Datenbankabfrage durch basierend auf der Benutzeranfrage in natürlicher Sprache {query}.
+    Übersetze die folgende natürliche Sprache in eine robuste DuckDB-SQL-Abfrage,
+    führe diese mit dem Tool "query" aus und gib das Ergebnis zurück.
 
-    VERFÜGBARES TOOL (vom MCP-Server bereitgestellt):
-    - query: Beliebige SQL-Statements gegen DuckDB ausführen
+    **Rolle & Ziel**
+    Du bist ein SQL-Planer und -Validator für DuckDB. Dein Ziel ist es, die Anfrage des Nutzers
+    mit einer korrekten, sicheren und effizienten Abfrage zu beantworten und das Resultset
+    zurückzugeben.
 
-    SCHRITTE:
-    1. Analysiere die Benutzeranfrage: {query}
-    2. Erkenne die relevanten Datenbanken und Tabellen
-    3. Generiere eine passende SQL-Abfrage basierend auf {query} und den relevanten Datenbanken und Tabellen
-    4. Führe die SQL-Abfrage mit "query" aus
-    5. Wenn eine Abfrage 0 Zeilen liefert, prüfe mögliche Groß-/Kleinschreibung für den Spaltennamen UND den Datenwerten und führ sie erneut case-insensitiv aus.
-    6. Projiziere die Ergebnismenge auf alle Spalten
-    7. Speicher die Rohdaten AUSSCHLIESSLICH als JSON mit den Schlüsseln `columns` (string[]) und `rows` (Array von Objekten mit ausschließlich diesen Schlüsseln) in data/natural_language_query_task.json.
-       Keine weiteren Felder (kein count, keine query, keine Metadaten, keine Platzhalter).
-
-    WICHTIG:
-    - Erkenne die Spaltennamen der Tabelle um passende SQL-Abfragen zu generieren
-    - Generiere SQL-Abfragen basierend auf der natürlichen Sprache {query}
-    - Gib ausschließlich Werte aus tatsächlichen Tool-Ausgaben zurück.
-    - Wenn keine erfolgreiche Tool-Ausführung stattfand oder 0 Zeilen, liefere rows: [] und erfinde nichts.
-    - Führe mindestens eine erfolgreiche Tool-Abfrage aus, bevor du Ergebnisse lieferst.
+    **Vorgehen**
+    1) Schaue dir das Schema der Tabelle energy_metadata: select * from energy_metadata;
+    2) Führe die Abfrage mit `query(sql)` aus.
+    3) Falls ein Fehler auftritt, diagnostiziere und korrigiere die SQL.
+    Falls die Abfrage keine Resultate liefert, prüfe auf case-sensitivity der Spaltenname und den Werten.
 
 
-    Deine Aufgabe ist es, die richtigen Daten zu finden und zu sammeln. Die Präsentation erfolgt durch einen anderen Agenten.
+    **Nutzeranfrage**
+    {query}
   expected_output: >
-    Ausschließlich ein JSON-Obejekt welches alle Spalten der Tabelle enthält.
+    Nur den SQL-Befehl, ohne Backticks --> Beispiel: select * from <tabelle> WHERE <filter>;
   agent: natural_language_query_agent
+  # output_file: data/natural_language_query_task.txt
   output_file: data/natural_language_query_task.json
+
+
+execute_sql_task:
+  description: >
+    Führe den von der vorherigen Task gelieferten SQL-Befehl EXAKT aus. Du findest den SQL-Befehl C:\Projekte\fedcatalog_agent\catalog_agent\data\natural_language_query_task.txt
+    Verwende ausschließlich das MCP-Tool "query" und übergib GENAU EIN JSON-Array
+
+    Schritte (streng nacheinander, je ein Tool-Aufruf pro Schritt):
+    1) Aus dem Kontext den SQL-Text lesen (ohne Backticks, ohne Kommentare).
+    2) SELECT ausführen: <SQL>.
+    3) Gib als Ergebnis ausschließlich dass Resultset zurück.
+    4) Falls die Abfrage keine Resultate liefert, prüfe auf case-sensitivity der Spaltenname und den Werten.
+
+  expected_output: >
+    Ausschließlich ein JSON-Array welches das Resultset der SQL-Abfrage enthält.
+  agent: natural_language_query_agent
+  context: [natural_language_query_task]
+  output_file: data/execute_sql_task.json
 
 data_presentation_task:
   description: >
@@ -45,11 +55,20 @@ data_presentation_task:
     - Verwende die übergebenen `columns` (Reihenfolge strikt beibehalten) und `rows`.
     - Bei Anfragen wie "Wie viele Anbieter" soll die Anzahl der Anbieter in der Tabelle ausgegeben werden.
 
+    ANTWORTFORMAT (streng):
+    - Kein Fließtext, keine Erklärungen, keine Einleitung oder Schlussfolgerung.
+    - Die Datei `data/data_presentation_task.md` enthält AUSSCHLIESSLICH die GitHub-Markdown-Tabelle.
+    - Wenn 0 Zeilen vorliegen, erzeuge eine gültige GitHub-Markdown-Tabelle mit Kopfzeile und ohne Datenzeilen (keine Erklärungstexte).
+    - Verwende ausschließlich die übergebenen `columns` und `rows`; erfinde keine zusätzlichen Spalten oder Werte.
 
   expected_output: >
     - count: Die Anzahl der Zeilen in der Tabelle.
     - table_markdown: Eine GitHub-Markdown-Tabelle basierend auf `columns` und `rows` oder eine Ausgabe der Anzahl der Anbieter.
       Die Datei data/data_presentation_task.md enthält ausschließlich diese Tabelle ohne zusätzlichen Text.
+    - Strukturierte Rückgabe enthält genau die Felder `count` und `table_markdown`; keine weiteren Felder.
   agent: data_presentation_agent
   context: [natural_language_query_task]
   output_file: data/data_presentation_task.md
+
+
+

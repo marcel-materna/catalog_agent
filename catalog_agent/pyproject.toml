@@ -16,6 +16,11 @@ dependencies = [
     "mcp-server-duckdb",
     "duckdb>=1.4.0",
     "pandas==2.3.3",
+    "openinference-instrumentation-crewai>=0.1.13",
+    "arize-phoenix-otel>=0.13.1",
+    "mcp-server-motherduck",
+    "mcp-sqlite",
+
 ]
 
 

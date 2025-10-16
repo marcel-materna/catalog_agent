@@ -1,0 +1,1 @@
+[{"market":"power","region":"de","dataset":"prices_day_ahead","source":"entsoe","format":"PARQUET","uri":"s3://energy-data/power/de/prices_day_ahead/2025/","last_updated":"2025-10-12 08:15:00+00"},{"market":"gas","region":"eu","dataset":"storage_levels","source":"gie","format":"Parquet","uri":"s3://energy-data/gas/eu/storage_levels/","last_updated":"2025-10-10 06:00:00+00"}]

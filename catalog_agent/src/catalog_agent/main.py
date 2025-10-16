@@ -18,6 +18,6 @@ def run():
   Run the crew.
   """
   inputs = {
-    'query': 'Wie viele Datensätze gibt es?'
+    'query': 'Show me all datasets with the format parquet'
   }
   CatalogAgentCrew().crew().kickoff(inputs=inputs)

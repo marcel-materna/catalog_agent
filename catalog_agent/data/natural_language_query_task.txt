@@ -1,0 +1,1 @@
+select * from energy_marketdata where lower(format) = 'parquet'
